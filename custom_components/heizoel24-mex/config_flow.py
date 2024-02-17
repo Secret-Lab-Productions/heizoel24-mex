@@ -12,8 +12,9 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
-from .const import DOMAIN, URL
+from .const import DOMAIN, BASE_URL, LOGIN_SERVICE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,41 +22,34 @@ _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required("username"): str,
-        vol.Required("email"): str,
-        vol.Required("securitystamp"): str,
-        vol.Required("deviceid"): str,
+        vol.Required("password"): str
     }
 )
 
 
-def test_auth(username: str, email: str, securitystamp: str, deviceid: str) -> bool:
+def test_auth(username: str, password: str) -> bool:
     """Test if we can authenticate with the host."""
 
-    REQ = {
-        "DeviceRequest": {
-            "Username": username,
-            "Email": email,
-            "SecurityStamp": securitystamp,
-            "DeviceID": deviceid,
-        }
-    }
-
-    with requests.post(URL, json=REQ) as r:
-        _LOGGER.debug("Authenticating: %s", r.text)
-        data = r.json()
-
-        # The E-sensorix API has a bug and double-encodes JSON. Fix it, but
-        # anticipate their own eventual fix. (maybe)
-        if type(data) == str:
-            try:
-                return json.loads(data)["DeviceResponse"]
-            except Exception:
+    REQ = { "Username" : username ,
+           "Password" : password}
+    _LOGGER.error(REQ)
+    with requests.post(BASE_URL + LOGIN_SERVICE, json=REQ) as r:
+        _LOGGER.error("Authenticating: %s", r.text)
+        try:
+            data = r.json()
+        except json.JSONDecodeError as e:
+                if "login" in data.casefold():
+                    raise ConfigEntryAuthFailed(data) from e
+                _LOGGER.error("E-sensorix API said: %s", data)
                 return False
-        else:
-            try:
-                return data["DeviceResponse"]
-            except Exception:
-                return False
+        if r.status_code == 200:
+            _LOGGER.debug(r.text)
+            if data['ResultCode'] == 0:
+                session_id = data['SessionId']
+                _LOGGER.info('Session ID: ' + session_id)
+                return True
+        return False
+
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -76,7 +70,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         #     your_validate_func, data["username"], data["password"]
         # )
 
-        args = data["username"], data["email"], data["securitystamp"], data["deviceid"]
+        args = data["username"], data["password"]
         auth_data = await hass.async_add_executor_job(test_auth, *args)
         if not data:
             raise InvalidAuth
@@ -100,18 +94,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         errors = {}
 
-        title = "EcoFrog " + user_input["deviceid"]
+        title = "Mex " + user_input["username"]
 
         try:
             info = await self.validate_input(self.hass, user_input)
-            if type(info) == list:
-                info = info[0]
-            try:
-                title = info["DeviceName"]
-                user_input["DeviceName"] = title
-            except KeyError:
-                pass
-
+         
         except CannotConnect:
             errors["base"] = "cannot_connect"
         except InvalidAuth:

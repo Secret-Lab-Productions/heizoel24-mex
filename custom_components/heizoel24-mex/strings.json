@@ -4,9 +4,7 @@
       "user": {
         "data": {
           "username": "[%key:common::config_flow::data::username%]",
-          "email": "[%key:common::config_flow::data::email%]",
-          "securitystamp": "[%key:common::config_flow::data::securitystamp%]",
-          "deviceid": "[%key:common::config_flow::data::deviceid%]"
+          "password": "[%key:common::config_flow::data::password%]"
         }
       }
     },

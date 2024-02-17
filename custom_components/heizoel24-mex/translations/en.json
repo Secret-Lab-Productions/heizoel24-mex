@@ -13,9 +13,7 @@
 		"description": "To get this information, please email info@e-sensorix.com. You may need to attach a photo of your device with the serial numbers visible.",
                 "data": {
 		    "username": "Username",
-		    "email": "Email",
-		    "securitystamp": "Security Stamp",
-		    "deviceid": "Device ID"
+		    "password": "Password"
                 }
             }
         }

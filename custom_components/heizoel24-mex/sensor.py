@@ -46,7 +46,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class EcoFrogSensor(CoordinatorEntity, SensorEntity):
+class MexSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = "Data provided by the Proteus/E-Sensorix API"
@@ -59,7 +59,7 @@ class EcoFrogSensor(CoordinatorEntity, SensorEntity):
 
         conf = self.config_entry.data
         deviceid = conf["deviceid"]
-        self._attr_unique_id = "ecofrog" + deviceid + unique_id_suffix
+        self._attr_unique_id = "mex" + deviceid + unique_id_suffix
         self._state = None
         self._should_poll = True
 
@@ -72,7 +72,7 @@ class EcoFrogSensor(CoordinatorEntity, SensorEntity):
             name=conf.get("DeviceName", "Ecofrog " + str(deviceid)),
             # config_entries=[self.config_entry.entry_id],
             manufacturer="E-Sensorix",
-            model="EcoFrog",
+            model="Mex",
         )
 
         if self.coordinator.data:
@@ -114,7 +114,7 @@ class EcoFrogSensor(CoordinatorEntity, SensorEntity):
         return attributes
 
 
-class TankVolume(EcoFrogSensor):
+class TankVolume(MexSensor):
     """An entity using CoordinatorEntity.
 
     The CoordinatorEntity class provides:
@@ -156,7 +156,7 @@ class TankVolume(EcoFrogSensor):
             return "mdi:gauge-empty"
 
 
-class MaxTankVolume(EcoFrogSensor):
+class MaxTankVolume(MexSensor):
     """An entity using CoordinatorEntity.
 
     The CoordinatorEntity class provides:
@@ -180,7 +180,7 @@ class MaxTankVolume(EcoFrogSensor):
         return int(self.coordinator.data[self.idx]["MaxVolume"])
 
 
-class TankPercent(EcoFrogSensor):
+class TankPercent(MexSensor):
     """An entity using CoordinatorEntity.
 
     The CoordinatorEntity class provides:
@@ -217,7 +217,7 @@ class TankPercent(EcoFrogSensor):
             return "mdi:gauge-empty"
 
 
-class Battery(EcoFrogSensor):
+class Battery(MexSensor):
     """An entity using CoordinatorEntity.
 
     The CoordinatorEntity class provides:
@@ -241,7 +241,7 @@ class Battery(EcoFrogSensor):
         return float(self.coordinator.data[self.idx]["Battery"])
 
 
-class Temperature(EcoFrogSensor):
+class Temperature(MexSensor):
     """An entity using CoordinatorEntity.
 
     The CoordinatorEntity class provides:
